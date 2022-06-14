@@ -414,8 +414,33 @@ int main(int argc, char *argv[])
         global.out[i].run(global.out[i].param.id);
     }
 
-    /* wait for signals */
-    pause();
+    /* if one of the output plugins is a file, grab it so it can seperately managed */
+    int fileIndex = -1;
+    for(i = 0; i < global.outcnt; i++) {
+        if(global.out[i].param.id == 1) {
+            fileIndex = i;
+            break;
+        }
+    }
+
+    if(fileIndex >= 0){
+        int (*stop_write)() = dlsym(global.out[fileIndex].handle, "stop_write");
+        int (*start_write)(char *newMjpgFileName) = dlsym(global.out[fileIndex].handle, "start_write");
+        while(1) {
+            char *cmd;
+            scanf("%ms", &cmd);
+            if(strcmp(cmd, "start") == 0){
+                char *fileName;
+                scanf("%ms", &fileName);
+                start_write(fileName);
+            } else if (strcmp(cmd, "stop") == 0){
+                stop_write();
+            }
+        }
+    } else {
+        /* wait for signals */
+        pause();
+    }
 
     return 0;
 }
